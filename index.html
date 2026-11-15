@@ -243,6 +243,7 @@
     </style>
   </head>
   <body>
+    <iframe id="upload-response-frame" name="upload-response-frame" title="Hasil unggah" hidden></iframe>
     <div class="shell">
       <header>
         <div class="brand">
@@ -323,6 +324,7 @@
     </div>
 
     <script>
+      const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzDgG3-gq_pb5rlUSr1TqZxjLrzmKjrpYDJzkixpAITUgaVZTotVyVE-JJ2SzTHZSCTBQ/exec";
       const MAX_FILES = 10;
       const MAX_FILE_SIZE = 5 * 1024 * 1024;
       const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -336,7 +338,31 @@
       const progressWrap = document.getElementById("progress-wrap");
       const progressBar = document.getElementById("progress-bar");
       const progressLabel = document.getElementById("progress-label");
+      const uploadFrame = document.getElementById("upload-response-frame");
+      const pendingUploads = new Map();
       let isUploading = false;
+
+      uploadFrame.addEventListener("load", () => {
+        let responseUrl;
+        try {
+          responseUrl = new URL(uploadFrame.contentWindow.location.href);
+        } catch (error) {
+          return;
+        }
+        if (responseUrl.origin !== window.location.origin ||
+            responseUrl.searchParams.get("alumniUpload") !== "1") return;
+
+        const requestId = responseUrl.searchParams.get("requestId");
+        const pending = pendingUploads.get(requestId);
+        if (!pending) return;
+        pendingUploads.delete(requestId);
+        clearTimeout(pending.timeout);
+        if (responseUrl.searchParams.get("success") === "1") {
+          pending.resolve({ name: responseUrl.searchParams.get("message") || "" });
+        } else {
+          pending.reject(new Error(responseUrl.searchParams.get("message") || "Unggah gagal. Silakan coba lagi."));
+        }
+      });
 
       for (let year = 1980; year <= 2020; year += 1) {
         const option = document.createElement("option");
@@ -431,15 +457,47 @@
           reader.onload = () => {
             const dataUrl = String(reader.result);
             const base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
-            google.script.run
-              .withSuccessHandler(resolve)
-              .withFailureHandler((error) => reject(new Error(error && error.message ? error.message : "Unggah gagal.")))
-              .uploadPhoto({
-                name: file.name,
-                mimeType: file.type,
-                base64,
-                year
-              });
+            const requestId = window.crypto && typeof window.crypto.randomUUID === "function"
+              ? window.crypto.randomUUID()
+              : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = APPS_SCRIPT_URL;
+            form.target = uploadFrame.name;
+            form.enctype = "application/x-www-form-urlencoded";
+            form.hidden = true;
+
+            const payload = document.createElement("input");
+            payload.type = "hidden";
+            payload.name = "payload";
+            payload.value = JSON.stringify({
+              name: file.name,
+              mimeType: file.type,
+              base64,
+              year,
+              requestId,
+              returnUrl: `${window.location.origin}${window.location.pathname}`
+            });
+            form.appendChild(payload);
+            document.body.appendChild(form);
+
+            const timeout = setTimeout(() => {
+              pendingUploads.delete(requestId);
+              form.remove();
+              reject(new Error(`Waktu tunggu habis. ID permintaan ${requestId}; periksa Apps Script > Executions sebelum mencoba lagi.`));
+            }, 120000);
+            pendingUploads.set(requestId, {
+              resolve: (result) => {
+                form.remove();
+                resolve(result);
+              },
+              reject: (error) => {
+                form.remove();
+                reject(error);
+              },
+              timeout
+            });
+            form.submit();
           };
           reader.readAsDataURL(file);
         });
@@ -470,8 +528,13 @@
       document.getElementById("upload-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         if (isUploading || !files.length || !yearSelect.value) return;
-        if (!window.google || !google.script || !google.script.run) {
-          showNotice("Halaman ini perlu dibuka dari Web App Google Apps Script agar dapat mengunggah foto.", "error");
+        const isGitHubPages = window.location.protocol === "https:" &&
+          window.location.hostname.toLowerCase().endsWith(".github.io");
+        if (!isGitHubPages) {
+          showNotice(
+            "Unggahan belum dikirim. Halaman masih dibuka dari lokal. Publikasikan index.html ke GitHub Pages dan buka URL https://...github.io terlebih dahulu agar hasil dari Apps Script dapat kembali ke halaman.",
+            "error"
+          );
           return;
         }
 
