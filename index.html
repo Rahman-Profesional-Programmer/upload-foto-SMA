@@ -342,27 +342,66 @@
       const pendingUploads = new Map();
       let isUploading = false;
 
-      uploadFrame.addEventListener("load", () => {
-        let responseUrl;
-        try {
-          responseUrl = new URL(uploadFrame.contentWindow.location.href);
-        } catch (error) {
+      window.receiveAlumniUploadStatus = (result) => {
+        if (!result || typeof result.requestId !== "string") return;
+        const pending = pendingUploads.get(result.requestId);
+        if (!pending) return;
+        pending.pollResponseReceived = true;
+
+        if (result.status === "pending") {
+          scheduleStatusPoll(result.requestId, 1500);
           return;
         }
-        if (responseUrl.origin !== window.location.origin ||
-            responseUrl.searchParams.get("alumniUpload") !== "1") return;
 
-        const requestId = responseUrl.searchParams.get("requestId");
+        pendingUploads.delete(result.requestId);
+        clearTimeout(pending.timeout);
+        clearTimeout(pending.pollTimer);
+        if (pending.script) pending.script.remove();
+        if (result.status === "success") {
+          pending.resolve(result);
+        } else {
+          pending.reject(new Error(result.error || "Unggah gagal. Silakan coba lagi."));
+        }
+      };
+
+      function scheduleStatusPoll(requestId, delay) {
+        const pending = pendingUploads.get(requestId);
+        if (!pending || pending.pollTimer) return;
+        pending.pollTimer = setTimeout(() => {
+          pending.pollTimer = null;
+          pollUploadStatus(requestId);
+        }, delay);
+      }
+
+      function pollUploadStatus(requestId) {
         const pending = pendingUploads.get(requestId);
         if (!pending) return;
-        pendingUploads.delete(requestId);
-        clearTimeout(pending.timeout);
-        if (responseUrl.searchParams.get("success") === "1") {
-          pending.resolve({ name: responseUrl.searchParams.get("message") || "" });
-        } else {
-          pending.reject(new Error(responseUrl.searchParams.get("message") || "Unggah gagal. Silakan coba lagi."));
-        }
-      });
+
+        if (pending.script) pending.script.remove();
+        const script = document.createElement("script");
+        pending.script = script;
+        pending.pollResponseReceived = false;
+        script.src = `${APPS_SCRIPT_URL}?action=uploadStatus&requestId=${encodeURIComponent(requestId)}&_=${Date.now()}`;
+        script.onload = () => {
+          script.remove();
+          if (pending.script === script) pending.script = null;
+          if (!pending.pollResponseReceived) scheduleStatusPoll(requestId, 2000);
+        };
+        script.onerror = () => {
+          script.remove();
+          if (pending.script === script) pending.script = null;
+          scheduleStatusPoll(requestId, 3000);
+        };
+
+        document.head.appendChild(script);
+        setTimeout(() => {
+          if (pending.script === script && !pending.pollResponseReceived) {
+            script.remove();
+            pending.script = null;
+            scheduleStatusPoll(requestId, 3000);
+          }
+        }, 15000);
+      }
 
       for (let year = 1980; year <= 2020; year += 1) {
         const option = document.createElement("option");
@@ -475,16 +514,20 @@
               mimeType: file.type,
               base64,
               year,
-              requestId,
-              returnUrl: `${window.location.origin}${window.location.pathname}`
+              requestId
             });
             form.appendChild(payload);
             document.body.appendChild(form);
 
             const timeout = setTimeout(() => {
+              const pending = pendingUploads.get(requestId);
               pendingUploads.delete(requestId);
+              if (pending) {
+                clearTimeout(pending.pollTimer);
+                if (pending.script) pending.script.remove();
+              }
               form.remove();
-              reject(new Error(`Waktu tunggu habis. ID permintaan ${requestId}; periksa Apps Script > Executions sebelum mencoba lagi.`));
+              reject(new Error(`Waktu tunggu habis menunggu status backend. ID permintaan ${requestId}; periksa Apps Script > Executions dan folder Drive sebelum mencoba ulang agar tidak membuat duplikat.`));
             }, 120000);
             pendingUploads.set(requestId, {
               resolve: (result) => {
@@ -498,6 +541,7 @@
               timeout
             });
             form.submit();
+            scheduleStatusPoll(requestId, 1500);
           };
           reader.readAsDataURL(file);
         });
