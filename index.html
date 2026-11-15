@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#183c33">
+    <title>Galeri Alumni — Unggah Foto</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1d2925;
+        --muted: #6d7872;
+        --green: #183c33;
+        --green-soft: #e8eee8;
+        --orange: #e6935c;
+        --paper: #f7f6f1;
+        --line: #e3e5de;
+        --white: #fff;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        min-width: 320px;
+      }
+
+      button, select { font: inherit; }
+      button:focus-visible, select:focus-visible, .dropzone:focus-visible {
+        outline: 3px solid #e6935c;
+        outline-offset: 3px;
+      }
+
+      .shell { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+      header {
+        height: 82px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .brand { display: flex; align-items: center; gap: 12px; font-weight: 750; letter-spacing: -.03em; }
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        color: white;
+        background: var(--green);
+        border-radius: 13px;
+      }
+      .brand-mark svg { width: 21px; height: 21px; }
+      .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: .02em; }
+      .header-note { color: var(--muted); font-size: 13px; }
+
+      main { padding: 32px 0 76px; }
+
+      .hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.15fr .85fr;
+        align-items: center;
+        min-height: 295px;
+        overflow: hidden;
+        padding: 46px 54px;
+        color: white;
+        background: var(--green);
+        border-radius: 24px;
+      }
+
+      .hero::after {
+        position: absolute;
+        right: 12%;
+        bottom: -180px;
+        width: 410px;
+        height: 410px;
+        content: "";
+        border: 1px solid rgba(255,255,255,.13);
+        border-radius: 50%;
+        box-shadow: 0 0 0 32px rgba(255,255,255,.035), 0 0 0 68px rgba(255,255,255,.025);
+      }
+
+      .eyebrow { color: #b9d1c4; font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+      h1 { max-width: 580px; margin: 17px 0 14px; font-size: clamp(34px, 5vw, 54px); line-height: 1.06; letter-spacing: -.055em; }
+      .hero p { max-width: 485px; margin: 0; color: #d3ded7; font-size: 15px; line-height: 1.7; }
+      .hero-art { position: relative; z-index: 1; justify-self: center; width: 210px; height: 190px; transform: rotate(5deg); }
+      .photo-card {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        width: 132px;
+        height: 150px;
+        padding: 9px 9px 29px;
+        background: #f4e9d8;
+        box-shadow: 0 18px 35px rgba(0,0,0,.2);
+      }
+      .photo-card:first-child { top: 21px; left: 3px; transform: rotate(-13deg); }
+      .photo-card:last-child { top: 4px; right: 4px; transform: rotate(11deg); background: #e5b07e; }
+      .photo-scene { display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(155deg, #f3cb8b 0 43%, #849e7d 43% 66%, #425e4f 66%); }
+      .photo-scene svg { width: 90px; height: 92px; margin-top: 9px; }
+
+      .upload-layout { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; margin-top: 24px; align-items: start; }
+      .panel { padding: 28px; background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 26px rgba(29,41,37,.035); }
+      .section-heading { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 23px; }
+      .step {
+        display: grid;
+        flex: 0 0 30px;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        color: var(--green);
+        background: var(--green-soft);
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 750;
+      }
+      h2 { margin: 2px 0 5px; font-size: 18px; letter-spacing: -.025em; }
+      .section-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+      label { display: block; margin-bottom: 9px; font-size: 13px; font-weight: 700; }
+      .select-wrap { position: relative; }
+      select {
+        width: 100%;
+        height: 48px;
+        padding: 0 42px 0 14px;
+        appearance: none;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid #d9ded7;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .select-wrap::after {
+        position: absolute;
+        top: 18px;
+        right: 16px;
+        width: 8px;
+        height: 8px;
+        content: "";
+        border-right: 1.5px solid var(--muted);
+        border-bottom: 1.5px solid var(--muted);
+        transform: rotate(45deg);
+        pointer-events: none;
+      }
+
+      .dropzone {
+        display: flex;
+        min-height: 170px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-top: 21px;
+        padding: 24px;
+        text-align: center;
+        background: #fbfcfa;
+        border: 1.5px dashed #c9d2c9;
+        border-radius: 13px;
+        cursor: pointer;
+        transition: background .18s ease, border-color .18s ease;
+      }
+      .dropzone:hover, .dropzone.is-dragging { background: #f1f6f1; border-color: #547a68; }
+      .upload-icon { display: grid; place-items: center; width: 42px; height: 42px; margin-bottom: 12px; color: var(--green); background: var(--green-soft); border-radius: 13px; }
+      .upload-icon svg { width: 21px; height: 21px; }
+      .dropzone strong { font-size: 14px; }
+      .dropzone span { margin-top: 6px; color: var(--muted); font-size: 12px; }
+      .browse { color: #2f6853; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+      #file-input { display: none; }
+
+      .file-list { display: grid; gap: 9px; margin: 16px 0 0; padding: 0; list-style: none; }
+      .file-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+      .file-thumb { width: 42px; height: 42px; flex: 0 0 42px; object-fit: cover; background: #eef0eb; border-radius: 7px; }
+      .file-details { min-width: 0; flex: 1; }
+      .file-name { overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+      .file-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .file-status { color: #34704e; font-size: 11px; font-weight: 700; }
+      .remove-file { width: 30px; height: 30px; color: #737e77; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: 20px; }
+      .remove-file:hover { color: #a33830; background: #fff1ef; }
+
+      .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+      .limit-note { color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .submit-button {
+        display: inline-flex;
+        min-width: 168px;
+        height: 46px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 18px;
+        color: #fff;
+        background: var(--green);
+        border: 0;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        transition: background .18s ease, transform .18s ease;
+      }
+      .submit-button:hover:not(:disabled) { background: #245846; transform: translateY(-1px); }
+      .submit-button:disabled { opacity: .48; cursor: not-allowed; }
+      .submit-button svg { width: 16px; height: 16px; }
+      .progress-wrap { display: none; margin-top: 16px; }
+      .progress-wrap.is-visible { display: block; }
+      .progress-track { height: 6px; overflow: hidden; background: #edf0eb; border-radius: 5px; }
+      .progress-bar { width: 0; height: 100%; background: var(--orange); border-radius: inherit; transition: width .2s ease; }
+      .progress-label { margin-top: 7px; color: var(--muted); font-size: 11px; }
+      .notice { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 9px; font-size: 12px; line-height: 1.55; }
+      .notice.is-visible { display: block; }
+      .notice.success { color: #285d3e; background: #edf7ee; }
+      .notice.error { color: #823d32; background: #fff0ed; }
+
+      .side-panel { padding: 25px 22px; background: #f0f2ec; border: 1px solid #e5e8df; border-radius: 17px; }
+      .side-panel h3 { margin: 0 0 17px; font-size: 15px; letter-spacing: -.02em; }
+      .guide-list { display: grid; gap: 17px; margin: 0; padding: 0; list-style: none; }
+      .guide-list li { display: flex; gap: 11px; color: #57635c; font-size: 12px; line-height: 1.55; }
+      .guide-icon { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; color: var(--green); background: #fff; border-radius: 9px; }
+      .guide-icon svg { width: 15px; height: 15px; }
+      .guide-list strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12px; }
+      .privacy-note { margin: 20px 0 0; padding-top: 15px; color: #6d7872; border-top: 1px solid #dce1d8; font-size: 11px; line-height: 1.6; }
+      footer { padding: 0 0 28px; color: #859089; text-align: center; font-size: 11px; }
+
+      @media (max-width: 760px) {
+        .shell { padding: 0 18px; }
+        header { height: 70px; }
+        .header-note { display: none; }
+        main { padding-top: 19px; }
+        .hero { grid-template-columns: 1fr; min-height: 0; padding: 34px 28px 30px; border-radius: 19px; }
+        .hero-art { width: 170px; height: 142px; margin: 18px 0 0; justify-self: end; transform: scale(.84) rotate(5deg); transform-origin: top right; }
+        .photo-card { width: 118px; height: 137px; }
+        .upload-layout { grid-template-columns: 1fr; gap: 15px; margin-top: 16px; }
+        .panel { padding: 22px 18px; }
+        .side-panel { padding: 22px 18px; }
+      }
+      @media (max-width: 440px) {
+        .form-footer { align-items: stretch; flex-direction: column; }
+        .submit-button { width: 100%; }
+        .limit-note { text-align: center; }
+        .hero { padding-inline: 23px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m5 17 4.5-4 3 2 2.5-2 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>Galeri Alumni<small>Ruang berbagi kenangan</small></div>
+        </div>
+        <div class="header-note">Satu sekolah, banyak cerita.</div>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="hero-title">
+          <div>
+            <div class="eyebrow">Kenangan lintas angkatan</div>
+            <h1 id="hero-title">Cerita kita, tersimpan dalam satu bingkai.</h1>
+            <p>Bagikan foto terbaikmu dan temukan kembali momen-momen berharga bersama teman satu angkatan.</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="photo-card"><div class="photo-scene"><svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="34" r="13" fill="#F1C7A1"/><path d="M26 92c2-20 11-31 24-31s22 11 24 31" fill="#F4E9D8"/><path d="M37 32c1-13 8-20 16-18 10 2 14 10 12 21-4-5-9-8-16-8-4 4-7 6-12 7Z" fill="#49382F"/></svg></div></div>
+            <div class="photo-card"><div class="photo-scene"><svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="34" r="13" fill="#D99C71"/><path d="M26 92c2-20 11-31 24-31s22 11 24 31" fill="#E5B07E"/><path d="M36 34c0-14 7-22 16-22 11 0 16 10 13 24-4-7-10-10-17-9-4 4-7 6-12 7Z" fill="#302A25"/></svg></div></div>
+          </div>
+        </section>
+
+        <div class="upload-layout">
+          <section class="panel" aria-labelledby="upload-title">
+            <div class="section-heading">
+              <span class="step" aria-hidden="true">01</span>
+              <div><h2 id="upload-title">Unggah foto alumni</h2><p>Pilih angkatan, lalu tambahkan foto dari perangkatmu.</p></div>
+            </div>
+
+            <form id="upload-form">
+              <label for="year-select">Angkatan alumni</label>
+              <div class="select-wrap">
+                <select id="year-select" name="year" required>
+                  <option value="" selected disabled>Pilih tahun angkatan</option>
+                </select>
+              </div>
+
+              <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+              <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Pilih atau letakkan foto di sini">
+                <div class="upload-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <strong>Seret foto ke sini</strong>
+                <span>atau <span class="browse">telusuri file</span> di perangkatmu</span>
+                <span>JPG, PNG, atau WEBP · Maks. 5 MB per foto · Hingga 10 foto</span>
+              </div>
+
+              <ul id="file-list" class="file-list" aria-label="Foto yang dipilih"></ul>
+              <div class="form-footer">
+                <div class="limit-note">Foto akan disimpan di folder Google Drive sesuai angkatan.</div>
+                <button id="submit-button" class="submit-button" type="submit" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Unggah foto
+                </button>
+              </div>
+              <div id="progress-wrap" class="progress-wrap" aria-live="polite">
+                <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+                <div id="progress-label" class="progress-label"></div>
+              </div>
+              <div id="notice" class="notice" role="status" aria-live="polite"></div>
+            </form>
+          </section>
+
+          <aside class="side-panel" aria-label="Panduan unggah">
+            <h3>Supaya unggahan lancar</h3>
+            <ul class="guide-list">
+              <li><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5v-9Z" stroke="currentColor" stroke-width="1.4"/><circle cx="7" cy="8" r="1.2" fill="currentColor"/><path d="m4 14 4-3 2.5 2 2-1.5L16 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span><span><strong>Pilih foto yang jelas</strong>Kenangan bersama teman dan kegiatan sekolah paling pas untuk dibagikan.</span></li>
+              <li><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5v10m0 0 3.5-3.5M10 12.5 6.5 9M4 13v2.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Unggah maksimal 10 foto</strong>Pastikan setiap file berukuran tidak lebih dari 5 MB.</span></li>
+              <li><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 4 5v4.3c0 3.5 2.5 6.7 6 8.2 3.5-1.5 6-4.7 6-8.2V5l-6-2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m7.5 10 1.7 1.7 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Periksa angkatanmu</strong>Foto disimpan ke folder Drive berdasarkan tahun yang dipilih.</span></li>
+            </ul>
+            <p class="privacy-note">Dengan mengunggah, kamu setuju agar foto disimpan di Google Drive pengelola galeri alumni.</p>
+          </aside>
+        </div>
+      </main>
+      <footer>Galeri Alumni · Dibuat untuk menyimpan cerita kita bersama.</footer>
+    </div>
+
+    <script>
+      const MAX_FILES = 10;
+      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+      const files = [];
+      const yearSelect = document.getElementById("year-select");
+      const fileInput = document.getElementById("file-input");
+      const dropzone = document.getElementById("dropzone");
+      const fileList = document.getElementById("file-list");
+      const submitButton = document.getElementById("submit-button");
+      const notice = document.getElementById("notice");
+      const progressWrap = document.getElementById("progress-wrap");
+      const progressBar = document.getElementById("progress-bar");
+      const progressLabel = document.getElementById("progress-label");
+      let isUploading = false;
+
+      for (let year = 1980; year <= 2020; year += 1) {
+        const option = document.createElement("option");
+        option.value = String(year);
+        option.textContent = `Alumni ${year}`;
+        yearSelect.appendChild(option);
+      }
+
+      function formatSize(bytes) {
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      }
+
+      function showNotice(message, type) {
+        notice.textContent = message;
+        notice.className = `notice is-visible ${type}`;
+      }
+
+      function clearNotice() {
+        notice.textContent = "";
+        notice.className = "notice";
+      }
+
+      function updateButton() {
+        submitButton.disabled = isUploading || files.length === 0 || !yearSelect.value;
+      }
+
+      function renderFiles() {
+        fileList.replaceChildren();
+        files.forEach((entry, index) => {
+          const item = document.createElement("li");
+          item.className = "file-item";
+
+          const image = document.createElement("img");
+          image.className = "file-thumb";
+          image.src = entry.preview;
+          image.alt = "";
+
+          const details = document.createElement("div");
+          details.className = "file-details";
+          const name = document.createElement("div");
+          name.className = "file-name";
+          name.textContent = entry.file.name;
+          const meta = document.createElement("div");
+          meta.className = "file-meta";
+          meta.textContent = `${formatSize(entry.file.size)}${entry.status ? ` · ${entry.status}` : ""}`;
+          details.append(name, meta);
+
+          item.append(image, details);
+          if (!isUploading) {
+            const remove = document.createElement("button");
+            remove.className = "remove-file";
+            remove.type = "button";
+            remove.setAttribute("aria-label", `Hapus ${entry.file.name}`);
+            remove.textContent = "×";
+            remove.addEventListener("click", () => {
+              URL.revokeObjectURL(entry.preview);
+              files.splice(index, 1);
+              renderFiles();
+              updateButton();
+            });
+            item.appendChild(remove);
+          }
+          fileList.appendChild(item);
+        });
+        updateButton();
+      }
+
+      function addFiles(fileCollection) {
+        clearNotice();
+        const incoming = Array.from(fileCollection);
+        const errors = [];
+        incoming.forEach((file) => {
+          if (!ALLOWED_TYPES.has(file.type)) {
+            errors.push(`${file.name}: format harus JPG, PNG, atau WEBP.`);
+          } else if (file.size > MAX_FILE_SIZE) {
+            errors.push(`${file.name}: ukuran melebihi 5 MB.`);
+          } else if (files.length >= MAX_FILES) {
+            errors.push(`Maksimal ${MAX_FILES} foto dalam satu kali unggah.`);
+          } else {
+            files.push({ file, preview: URL.createObjectURL(file), status: "" });
+          }
+        });
+        renderFiles();
+        if (errors.length) showNotice(errors.join(" "), "error");
+        fileInput.value = "";
+      }
+
+      function uploadOne(file, year) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error(`Gagal membaca file ${file.name}.`));
+          reader.onload = () => {
+            const dataUrl = String(reader.result);
+            const base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler((error) => reject(new Error(error && error.message ? error.message : "Unggah gagal.")))
+              .uploadPhoto({
+                name: file.name,
+                mimeType: file.type,
+                base64,
+                year
+              });
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      fileInput.addEventListener("change", () => addFiles(fileInput.files));
+      dropzone.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          fileInput.click();
+        }
+      });
+      ["dragenter", "dragover"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.add("is-dragging");
+      }));
+      ["dragleave", "drop"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("is-dragging");
+      }));
+      dropzone.addEventListener("drop", (event) => addFiles(event.dataTransfer.files));
+      yearSelect.addEventListener("change", () => {
+        clearNotice();
+        updateButton();
+      });
+
+      document.getElementById("upload-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (isUploading || !files.length || !yearSelect.value) return;
+        if (!window.google || !google.script || !google.script.run) {
+          showNotice("Halaman ini perlu dibuka dari Web App Google Apps Script agar dapat mengunggah foto.", "error");
+          return;
+        }
+
+        const year = yearSelect.value;
+        const pending = files.slice();
+        let uploaded = 0;
+        const failed = [];
+        clearNotice();
+        isUploading = true;
+        renderFiles();
+        progressWrap.classList.add("is-visible");
+        progressBar.style.width = "0%";
+
+        for (let index = 0; index < pending.length; index += 1) {
+          const entry = pending[index];
+          progressLabel.textContent = `Mengunggah ${index + 1} dari ${pending.length}: ${entry.file.name}`;
+          try {
+            await uploadOne(entry.file, year);
+            uploaded += 1;
+            const currentIndex = files.indexOf(entry);
+            if (currentIndex !== -1) {
+              URL.revokeObjectURL(entry.preview);
+              files.splice(currentIndex, 1);
+            }
+          } catch (error) {
+            failed.push(`${entry.file.name}: ${error.message}`);
+          }
+          progressBar.style.width = `${Math.round(((index + 1) / pending.length) * 100)}%`;
+        }
+
+        isUploading = false;
+        renderFiles();
+        progressLabel.textContent = failed.length
+          ? `${uploaded} foto berhasil, ${failed.length} gagal.`
+          : `${uploaded} foto berhasil diunggah ke Alumni ${year}.`;
+        if (failed.length) {
+          showNotice(`${uploaded} berhasil. File yang gagal tetap dipilih agar bisa dicoba lagi. ${failed.join(" ")}`, uploaded ? "success" : "error");
+        } else {
+          showNotice("Terima kasih, fotomu sudah tersimpan di folder angkatan.", "success");
+        }
+      });
+    </script>
+  </body>
+</html>
