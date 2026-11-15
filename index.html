@@ -21,6 +21,7 @@
       }
 
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
 
       body {
         margin: 0;
@@ -224,28 +225,32 @@
 
       .tab-bar {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         margin-top: 22px;
-        padding: 6px;
-        background: #e9ece5;
-        border-radius: 12px;
+        padding: 7px;
+        background: var(--green);
+        border: 1px solid #285346;
+        border-radius: 14px;
+        box-shadow: 0 5px 16px rgba(24,60,51,.18);
       }
       .tab-button {
-        min-height: 42px;
+        min-height: 46px;
         flex: 1;
         padding: 9px 16px;
-        color: #58645d;
+        color: #e5eee8;
         background: transparent;
         border: 0;
-        border-radius: 8px;
+        border-radius: 9px;
         cursor: pointer;
         font-size: 13px;
         font-weight: 700;
+        transition: color .18s ease, background .18s ease, box-shadow .18s ease;
       }
+      .tab-button:hover:not([aria-selected="true"]) { color: #fff; background: rgba(255,255,255,.12); }
       .tab-button[aria-selected="true"] {
-        color: var(--green);
-        background: #fff;
-        box-shadow: 0 2px 6px rgba(29,41,37,.08);
+        color: #24352e;
+        background: #f2a064;
+        box-shadow: 0 3px 9px rgba(0,0,0,.2);
       }
       .tab-button:focus-visible, .folder-link:focus-visible {
         outline: 3px solid var(--orange);
@@ -342,7 +347,7 @@
         <div id="upload-panel" class="upload-layout" role="tabpanel" aria-labelledby="upload-tab">
           <section class="panel" aria-labelledby="upload-title">
             <div class="section-heading">
-              <span class="step" aria-hidden="true">01</span>
+              <!-- <span class="step" aria-hidden="true">01</span> -->
               <div><h2 id="upload-title">Unggah foto alumni</h2><p>Pilih angkatan, lalu tambahkan foto dari perangkatmu.</p></div>
             </div>
 
@@ -398,6 +403,7 @@
           </div>
           <div id="folder-grid" class="folder-grid" aria-label="Folder Google Drive berdasarkan tahun alumni"></div>
         </section>
+        
       </main>
       <footer>Galeri Alumni · Dibuat untuk menyimpan cerita kita bersama.</footer>
     </div>
