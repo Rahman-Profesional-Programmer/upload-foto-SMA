@@ -1,13 +1,8 @@
 const { test, expect } = require("@playwright/test");
+const fs = require("node:fs");
+const path = require("node:path");
 
 test.beforeEach(async ({ page }) => {
-  const appOrigin = new URL(test.info().project.use.baseURL).origin;
-  await page.route("**/*", (route) => {
-    if (new URL(route.request().url()).origin === appOrigin) {
-      return route.continue();
-    }
-    return route.abort();
-  });
   await page.goto("./");
 });
 
@@ -78,4 +73,56 @@ test("limits the selection to ten photos", async ({ page }) => {
 
   await expect(page.locator("#file-list li")).toHaveCount(10);
   await expect(page.locator("#notice")).toContainText("Maksimal 10 foto");
+});
+
+test("uploads both requested photos and verifies them in the Alumni 2012 Drive folder", async ({ page }) => {
+  test.setTimeout(360_000);
+
+  const photoPaths = [
+    process.env.ALUMNI_2012_PHOTO_1 ||
+      "C:\\Users\\PLH\\Downloads\\Smiling Scout Portrait on Campus.png",
+    process.env.ALUMNI_2012_PHOTO_2 ||
+      "C:\\Users\\PLH\\Downloads\\Welcoming Indah Cargo Customer Service.png"
+  ].map((photoPath) => path.resolve(photoPath));
+
+  for (const photoPath of photoPaths) {
+    if (!fs.existsSync(photoPath)) {
+      throw new Error(`Upload test photo not found: ${photoPath}`);
+    }
+  }
+
+  await page.waitForFunction(() => typeof window.receiveAlumniUploadStatus === "function");
+  await page.evaluate(() => {
+    const receiveStatus = window.receiveAlumniUploadStatus;
+    window.__alumniUploadResults = [];
+    window.receiveAlumniUploadStatus = (result) => {
+      if (result?.status && result.status !== "pending") {
+        window.__alumniUploadResults.push(result);
+      }
+      receiveStatus(result);
+    };
+  });
+
+  await page.locator("#year-select").selectOption("2012");
+  await page.locator("#file-input").setInputFiles(photoPaths);
+  await expect(page.locator("#file-list .file-name")).toHaveCount(2);
+  await page.locator("#submit-button").click();
+  await expect(page.locator("#progress-label")).toHaveText(
+    "2 foto berhasil diunggah ke Alumni 2012.",
+    { timeout: 270_000 }
+  );
+
+  const uploadResults = await page.evaluate(() => window.__alumniUploadResults);
+  expect(uploadResults).toHaveLength(2);
+  for (const result of uploadResults) {
+    expect(result.status).toBe("success");
+    expect(result.year).toBe("2012");
+    expect(result.name).toMatch(/^Alumni_2012_.+\.png$/);
+  }
+
+  await page.goto("https://drive.google.com/drive/folders/1FwPkrifXPWrW7MwpmxC-K06t5Wk4WdCk");
+  await expect(page).toHaveTitle("Alumni 2012 - Google Drive");
+  for (const result of uploadResults) {
+    await expect(page.locator("body")).toContainText(result.name, { timeout: 60_000 });
+  }
 });
